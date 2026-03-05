@@ -41,10 +41,10 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    // Define projection centered on Edinburgh
-    const projection = d3.geoEquirectangular()
-      .center([-3.1883, 55.9533]) // Center on Edinburgh
-      .scale(width * 20) // Much higher scale for regional view
+    // Mercator projection centered on Europe
+    const projection = d3.geoMercator()
+      .center([10, 50])
+      .scale(width * 0.8)
       .translate([width / 2, height / 2]);
 
     const path = d3.geoPath().projection(projection);
@@ -54,7 +54,7 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
 
     // Draw countries
     const countries = topojson.feature(worldData, worldData.objects.countries);
-    
+
     g.append('path')
       .datum(countries)
       .attr('d', path as any)
@@ -69,16 +69,16 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
       if (activeSegment !== 'ALL' && node.type !== activeSegment) return;
 
       const [x, y] = projection([node.location.lng, node.location.lat]) || [0, 0];
-      
-      // Coverage radius based on type (Adjusted for regional scale)
-      let radiusKm = 5; // Default
-      if (node.type === 'DOMESTIC') radiusKm = 10;
-      if (node.type === 'OVERSEAS') radiusKm = 15;
-      if (node.type === 'MARITIME') radiusKm = 20;
-      if (node.type === 'SPACE') radiusKm = 50;
 
-      // Convert km to map units (rough approximation for regional visualization)
-      const radiusPx = (radiusKm / 111) * (width * 20 / 360); 
+      // Coverage radius based on type
+      let radiusKm = 80;
+      if (node.type === 'DOMESTIC') radiusKm = 120;
+      if (node.type === 'OVERSEAS') radiusKm = 200;
+      if (node.type === 'MARITIME') radiusKm = 250;
+      if (node.type === 'SPACE') radiusKm = 500;
+
+      // Convert km to pixels at this scale
+      const radiusPx = (radiusKm / 111) * (width * 0.8 / 360) * Math.PI;
 
       const color = node.type === 'DOMESTIC' ? '#3b82f6' :
                     node.type === 'OVERSEAS' ? '#8b5cf6' :
@@ -127,11 +127,11 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
         .attr('pointer-events', 'none');
     });
 
-    // Highlight Blind Spots (Regional Gaps)
+    // EU-scale blind spots
     const gaps = [
-      { name: 'Pentland Shadow Zone', lng: -3.35, lat: 55.85 },
-      { name: 'Firth Deep Gap', lng: -3.00, lat: 56.10 },
-      { name: 'West Lothian Blind Spot', lng: -3.60, lat: 55.90 }
+      { name: 'Baltic Coverage Gap', lng: 22.0, lat: 56.5 },
+      { name: 'Adriatic Blind Spot', lng: 17.0, lat: 44.0 },
+      { name: 'Iberian Shadow Zone', lng: -6.0, lat: 39.0 }
     ];
 
     gaps.forEach(gap => {
@@ -172,7 +172,7 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-black/60 p-3 rounded border border-[#1e1e24] backdrop-blur-sm">
         <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Coverage Metrics</div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-[10px] text-zinc-400 font-mono">Global Coverage:</span>
+          <span className="text-[10px] text-zinc-400 font-mono">EU Coverage:</span>
           <span className="text-[10px] text-emerald-400 font-mono font-bold">78.4%</span>
         </div>
         <div className="flex items-center justify-between gap-4">
@@ -187,11 +187,11 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
       <svg ref={svgRef} className="w-full h-full cursor-move" />
 
       {selectedNode && tooltipPos && (
-        <div 
+        <div
           className="fixed z-50 w-64 bg-[#0d0d12] border border-[#1e1e24] rounded-lg shadow-2xl p-4 pointer-events-auto animate-in fade-in zoom-in duration-200"
-          style={{ 
-            left: Math.min(window.innerWidth - 270, tooltipPos.x + 10), 
-            top: Math.min(window.innerHeight - 200, tooltipPos.y + 10) 
+          style={{
+            left: Math.min(window.innerWidth - 270, tooltipPos.x + 10),
+            top: Math.min(window.innerHeight - 200, tooltipPos.y + 10)
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -200,7 +200,7 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
               <div className="text-[10px] text-zinc-500 font-mono tracking-widest leading-none mb-1">{selectedNode.id}</div>
               <h3 className="text-sm font-bold text-white tracking-tight">{selectedNode.name}</h3>
             </div>
-            <button 
+            <button
               onClick={() => setSelectedNode(null)}
               className="text-zinc-500 hover:text-zinc-300 transition-colors"
             >
@@ -236,8 +236,8 @@ export const GeographicCoverageMap: React.FC<GeographicCoverageMapProps> = ({ no
           </div>
 
           <div className={`px-2 py-1 rounded text-[9px] font-bold tracking-widest text-center
-            ${selectedNode.status === 'ONLINE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-              selectedNode.status === 'SURGE' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 
+            ${selectedNode.status === 'ONLINE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+              selectedNode.status === 'SURGE' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
               selectedNode.status === 'DEGRADED' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
               'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
             STATUS: {selectedNode.status}

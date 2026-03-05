@@ -17,6 +17,8 @@ export interface NetworkNode {
     bandwidth: number;
     cpuLoad: number;
   };
+  alarmActive?: boolean;
+  powerRouting?: string;
 }
 
 export interface Agent {
@@ -26,7 +28,7 @@ export interface Agent {
   status: 'IDLE' | 'ACTIVE' | 'ERROR' | 'DEPLOYING';
   hierarchyLevel: number;
   parentId?: string;
-  embodiment?: string; // The physical system it's currently controlling
+  embodiment?: string;
   tasks: string[];
 }
 

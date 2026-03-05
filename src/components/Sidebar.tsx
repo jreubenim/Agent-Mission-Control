@@ -4,15 +4,17 @@
  */
 
 import React from 'react';
-import { LayoutGrid, Globe, Ship, Satellite, Users, Activity, ShieldAlert } from 'lucide-react';
+import { LayoutGrid, Globe, Ship, Satellite, Users, Activity, ShieldAlert, MessageSquare, Bell, Rocket, Wifi, Radio } from 'lucide-react';
 import { SegmentType } from '../types';
 
 interface SidebarProps {
-  activeSegment: SegmentType | 'AGENTS' | 'SIGINT';
-  onSegmentChange: (segment: SegmentType | 'AGENTS' | 'SIGINT') => void;
+  activeSegment: SegmentType | 'AGENTS' | 'SIGINT' | 'ALERTS' | 'MISSIONS' | 'SENSORS' | 'IPC_LOG';
+  onSegmentChange: (segment: SegmentType | 'AGENTS' | 'SIGINT' | 'ALERTS' | 'MISSIONS' | 'SENSORS' | 'IPC_LOG') => void;
+  onToggleChat?: () => void;
+  isChatOpen?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeSegment, onSegmentChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeSegment, onSegmentChange, onToggleChat, isChatOpen }) => {
   const items = [
     { id: 'DOMESTIC', icon: LayoutGrid, label: 'Domestic Ground' },
     { id: 'OVERSEAS', icon: Globe, label: 'Overseas Reach' },
@@ -22,6 +24,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSegment, onSegmentChange
     { id: 'divider', type: 'divider' },
     { id: 'AGENTS', icon: Users, label: 'Agent Orchestrator' },
     { id: 'SIGINT', icon: ShieldAlert, label: 'SIGINT / Geometry' },
+    { id: 'ALERTS', icon: Bell, label: 'Alerts' },
+    { id: 'MISSIONS', icon: Rocket, label: 'Mission Command' },
+    { id: 'SENSORS', icon: Wifi, label: 'Sensor Network' },
+    { id: 'IPC_LOG', icon: Radio, label: 'Agent IPC Log' },
+    { id: 'divider2', type: 'divider' },
+    { id: 'CHAT', icon: MessageSquare, label: 'AI Analyst' },
   ];
 
   return (
@@ -45,12 +53,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSegment, onSegmentChange
           }
           
           const Icon = item.icon!;
-          const isActive = activeSegment === item.id;
-          
+          const isChat = item.id === 'CHAT';
+          const isActive = isChat ? !!isChatOpen : activeSegment === item.id;
+
           return (
             <button
               key={item.id}
-              onClick={() => onSegmentChange(item.id as any)}
+              onClick={() => isChat ? onToggleChat?.() : onSegmentChange(item.id as any)}
               className={`w-full flex items-center gap-3 px-6 py-3 text-sm transition-all duration-200 group
                 ${isActive 
                   ? 'text-emerald-400 bg-emerald-500/5 border-r-2 border-emerald-500' 
