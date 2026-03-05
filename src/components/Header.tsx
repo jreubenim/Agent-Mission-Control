@@ -5,8 +5,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clock, Wifi, Database, Cpu } from 'lucide-react';
+import { NetworkNode } from '../types';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  nodes?: NetworkNode[];
+}
+
+export const Header: React.FC<HeaderProps> = ({ nodes = [] }) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -14,10 +19,25 @@ export const Header: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Compute live stats from node data
+  const avgLatency = nodes.length
+    ? Math.round(nodes.reduce((s, n) => s + n.telemetry.latency, 0) / nodes.length)
+    : 42;
+  const totalBandwidth = nodes.length
+    ? (nodes.reduce((s, n) => s + n.telemetry.bandwidth, 0) / 1000).toFixed(1)
+    : '14.2';
+  const avgCpu = nodes.length
+    ? Math.round(nodes.reduce((s, n) => s + n.telemetry.cpuLoad, 0) / nodes.length)
+    : 28;
+
+  const onlineCount = nodes.filter(n => n.status === 'ONLINE').length;
+  const allOnline = nodes.length > 0 && onlineCount === nodes.length;
+  const hasEmergency = nodes.some(n => n.status === 'OFFLINE');
+
   const stats = [
-    { label: 'UPLINK LATENCY', value: '42ms', icon: Wifi, color: 'text-emerald-400' },
-    { label: 'GLOBAL BANDWIDTH', value: '14.2 Tbps', icon: Database, color: 'text-blue-400' },
-    { label: 'ORCHESTRATOR LOAD', value: '28%', icon: Cpu, color: 'text-amber-400' },
+    { label: 'UPLINK LATENCY', value: `${avgLatency}ms`, icon: Wifi, color: 'text-emerald-400' },
+    { label: 'GLOBAL BANDWIDTH', value: `${totalBandwidth} Tbps`, icon: Database, color: 'text-blue-400' },
+    { label: 'ORCHESTRATOR LOAD', value: `${avgCpu}%`, icon: Cpu, color: 'text-amber-400' },
   ];
 
   return (
@@ -29,9 +49,9 @@ export const Header: React.FC = () => {
             {time.toLocaleTimeString('en-GB', { hour12: false })} UTC
           </span>
         </div>
-        
+
         <div className="h-4 w-px bg-[#1e1e24]" />
-        
+
         <div className="flex items-center gap-6">
           {stats.map((stat) => (
             <div key={stat.label} className="flex items-center gap-3">
@@ -50,10 +70,18 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded">
-          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[10px] font-bold text-emerald-400 tracking-widest uppercase">
-            System Nominal
+        <div className={`flex items-center gap-2 px-3 py-1 rounded ${
+          hasEmergency
+            ? 'bg-red-500/10 border border-red-500/20'
+            : 'bg-emerald-500/10 border border-emerald-500/20'
+        }`}>
+          <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+            hasEmergency ? 'bg-red-500' : 'bg-emerald-500'
+          }`} />
+          <span className={`text-[10px] font-bold tracking-widest uppercase ${
+            hasEmergency ? 'text-red-400' : 'text-emerald-400'
+          }`}>
+            {hasEmergency ? 'Alert Active' : allOnline ? 'All Systems Nominal' : 'System Nominal'}
           </span>
         </div>
         <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center">

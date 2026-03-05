@@ -1,16 +1,10 @@
-// AUTO-GENERATED — run `npx convex dev` to regenerate
+/* eslint-disable */
+// STUB — run `npx convex dev` to regenerate with full type safety
 export {
-  query,
-  mutation,
-  action,
-  internalQuery,
-  internalMutation,
-  internalAction,
-} from "convex/server";
-export type {
-  DatabaseReader,
-  DatabaseWriter,
-  MutationCtx,
-  QueryCtx,
-  ActionCtx,
+  queryGeneric as query,
+  mutationGeneric as mutation,
+  actionGeneric as action,
+  internalQueryGeneric as internalQuery,
+  internalMutationGeneric as internalMutation,
+  internalActionGeneric as internalAction,
 } from "convex/server";
